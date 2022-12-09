@@ -36,20 +36,6 @@ func processRawData(input []string) [][]int {
 	return result
 }
 
-// func checkTree(x int, y int, tree_map [][]int) bool {
-// 	result := true
-// 	tree_height := tree_map[y][x]
-// 	max_y := len(tree_map) - 1
-// 	max_x := len(tree_map[0]) - 1
-// 	if (y < max_y && tree_map[y+1][x] > tree_height) ||
-// 		(x < max_x && tree_map[y][x+1] > tree_height) ||
-// 		(y > 0 && tree_map[y-1][x] > tree_height) ||
-// 		(x > 0 && tree_map[y][x-1] > tree_height) {
-// 		result = false
-// 	}
-// 	return result
-// }
-
 func checkTree(x int, y int, tree_map [][]int) (bool, int) {
 	x_pos_blocked := false
 	x_neg_blocked := false
@@ -60,7 +46,6 @@ func checkTree(x int, y int, tree_map [][]int) (bool, int) {
 	max_x := len(tree_map[0]) - 1
 	tree_count := 0
 	scenic_score := 1
-	//fmt.Printf("x: %d y: %d tree_height: %d max_y: %d max_x: %d \n", x, y, tree_height, max_x, max_y)
 	for x_pos := x + 1; x_pos <= max_x; x_pos++ {
 		tree_count++
 		if tree_map[y][x_pos] >= tree_height {
@@ -97,7 +82,6 @@ func checkTree(x int, y int, tree_map [][]int) (bool, int) {
 	}
 	scenic_score = tree_count * scenic_score
 	vis := !y_neg_blocked || !y_pos_blocked || !x_neg_blocked || !x_pos_blocked
-	//fmt.Println("Visible: ", vis)
 	return vis, scenic_score
 }
 
