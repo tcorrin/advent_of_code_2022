@@ -94,22 +94,25 @@ func runOperation(input uint64, operation string) uint64 {
 	return result
 }
 
+func calcModifier(monkeys *[]monkey) uint64 {
+	result := 1
+	for _, m := range *monkeys {
+		result = result * m.test
+	}
+	return uint64(result)
+}
+
 func processMonkey(monkeys *[]monkey, index int, pt2 bool) {
 	for _, o := range (*monkeys)[index].object_list {
-		//fmt.Printf("Monkey %d inspects object - %d\n", index, o)
 		new_value := runOperation(o, (*monkeys)[index].operation)
-		//fmt.Printf("  Post operation %s - %d\n", (*monkeys)[index].operation, new_value)
-		if !pt2 {
+		if pt2 {
+			new_value = new_value % calcModifier(monkeys)
+		} else {
 			new_value = new_value / 3
-			//fmt.Printf("  Post boredom divison by 3 - %d\n", new_value)
 		}
 		if new_value%uint64((*monkeys)[index].test) == 0 {
-			//fmt.Printf("  Item divisible by %d\n", (*monkeys)[index].test)
-			//fmt.Printf("  Item %d passed to monkey %d\n", new_value, (*monkeys)[index].positive_destination)
 			(*monkeys)[(*monkeys)[index].positive_destination].object_list = append((*monkeys)[(*monkeys)[index].positive_destination].object_list, new_value)
 		} else {
-			//fmt.Printf("  Item not divisible by %d\n", (*monkeys)[index].test)
-			//fmt.Printf("  Item %d passed to monkey %d\n", new_value, (*monkeys)[index].negative_destiantion)
 			(*monkeys)[(*monkeys)[index].negative_destiantion].object_list = append((*monkeys)[(*monkeys)[index].negative_destiantion].object_list, new_value)
 		}
 		(*monkeys)[index].inspection_count++
@@ -127,14 +130,12 @@ func printMonkeyItems(monkeys *[]monkey) {
 func processFile(filename string, pt2 bool) {
 	count := 20
 	if pt2 {
-		count = 1000
+		count = 10000
 	}
 	raw_data := loadFile(filename)
 	monkeys := parseMonkeys(raw_data)
 	for rc := 0; rc < count; rc++ {
 		processRound(&monkeys, pt2)
-		//printMonkeyItems(&monkeys)
-		//fmt.Println("********")
 	}
 	printMonkeyItems(&monkeys)
 	first := 0
@@ -156,9 +157,9 @@ func processFile(filename string, pt2 bool) {
 }
 
 func main() {
-	//processFile("day11-example.txt", false)
+	processFile("day11-example.txt", false)
 	processFile("day11-example.txt", true)
 	fmt.Println("-------")
-	//processFile("day11.txt", false)
-	//processFile("day11.txt", true)
+	processFile("day11.txt", false)
+	processFile("day11.txt", true)
 }
