@@ -61,7 +61,6 @@ func processCommand(rope *[]*knot, tail_positions *[]position, c command) {
 			moveKnot((*rope)[j], c.direction)
 		}
 		addCurrentTailPosition((*rope)[len(*rope)-1].current, tail_positions)
-		//fmt.Printf("    Head Position x: %d y: %d - Tail Position x: %d y: %d\n", head.x, head.y, tail.x, tail.y)
 	}
 }
 
@@ -78,51 +77,33 @@ func moveHead(head *position, direction string) {
 }
 
 func moveKnot(k *knot, direction string) {
-	if direction == "R" {
-		if k.parent.x > k.current.x+1 {
-			k.current.x += 1
-			if k.parent.y > k.current.y {
-				k.current.y += 1
-			} else if k.parent.y < k.current.y {
-				k.current.y -= 1
-			}
-		}
-	} else if direction == "L" {
-		if k.parent.x < k.current.x-1 {
-			k.current.x -= 1
-			if k.parent.y > k.current.y {
-				k.current.y += 1
-			} else if k.parent.y < k.current.y {
-				k.current.y -= 1
-			}
-		}
-	} else if direction == "U" {
-		if k.parent.y > k.current.y+1 {
+	if k.parent.x > k.current.x+1 {
+		k.current.x += 1
+		if k.parent.y > k.current.y {
 			k.current.y += 1
-			if k.parent.x > k.current.x {
-				k.current.x += 1
-			} else if k.parent.x < k.current.x {
-				k.current.x -= 1
-			}
-		}
-	} else if direction == "D" {
-		if k.parent.y < k.current.y-1 {
+		} else if k.parent.y < k.current.y {
 			k.current.y -= 1
-			if k.parent.x > k.current.x {
-				k.current.x += 1
-			} else if k.parent.x < k.current.x {
-				k.current.x -= 1
-			}
 		}
-	}
-}
-
-func printRope(rope []*knot) {
-	for i, k := range rope {
-		if k.parent != nil {
-			fmt.Printf("Knot %d Current x: %d y: %d Parent x: %d y: %d\n", i, k.current.x, k.current.y, k.parent.x, k.parent.y)
-		} else {
-			fmt.Printf("Knot %d Current x: %d y: %d\n", i, k.current.x, k.current.y)
+	} else if k.parent.x < k.current.x-1 {
+		k.current.x -= 1
+		if k.parent.y > k.current.y {
+			k.current.y += 1
+		} else if k.parent.y < k.current.y {
+			k.current.y -= 1
+		}
+	} else if k.parent.y > k.current.y+1 {
+		k.current.y += 1
+		if k.parent.x > k.current.x {
+			k.current.x += 1
+		} else if k.parent.x < k.current.x {
+			k.current.x -= 1
+		}
+	} else if k.parent.y < k.current.y-1 {
+		k.current.y -= 1
+		if k.parent.x > k.current.x {
+			k.current.x += 1
+		} else if k.parent.x < k.current.x {
+			k.current.x -= 1
 		}
 	}
 }
@@ -136,20 +117,18 @@ func processFile(filename string, rope_length int) {
 	}
 	tail_positions = append(tail_positions, *rope[0].current)
 	command_list := loadFile(filename)
-	printRope(rope)
 	for _, c := range command_list {
 		processCommand(&rope, &tail_positions, c)
-		printRope(rope)
 	}
 	fmt.Println("Number of unique tail positions: ", len(tail_positions))
 }
 
 func main() {
-	//processFile("day09-example.txt", 2)
-	//processFile("day09.txt", 2)
-	//fmt.Println("-------")
+	processFile("day09-example.txt", 2)
+	processFile("day09.txt", 2)
+	fmt.Println("-------")
 	processFile("day09-example.txt", 10)
-	//processFile("day09-example02.txt", 10)
-	//processFile("day09.txt", 10)
+	processFile("day09-example02.txt", 10)
+	processFile("day09.txt", 10)
 
 }
