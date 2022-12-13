@@ -121,56 +121,100 @@ func buildGraph(hm heightMap) map[position][]graphEntry {
 	return result
 }
 
-func pathContainsPosition(path []position, pos position) bool {
-	result := false
-	for _, p := range path {
-		if p.x == pos.x && p.y == pos.y {
-			result = true
-			break
-		}
-	}
+func queuePop(q *[]position) position {
+	result := (*q)[0]
+	(*q)[0] = position{}
+	*q = (*q)[1:]
 	return result
 }
 
-func findShortestPath(pg map[position][]graphEntry, start position, end position, path []position) []position {
-	_, exists := pg[start]
-	if !exists {
-		return path
-	}
-	path = append(path, start)
-	//fmt.Println(path)
-	//fmt.Printf("Start x: %d Start y %d - End x: %d End y: %d\n", start.x, start.y, end.x, end.y)
-	if start.x == end.x && start.y == end.y {
-		return path
-	}
-	shortest := make([]position, 0)
-	for _, ge := range pg[start] {
-		if !pathContainsPosition(path, ge.pos) {
-			newPath := findShortestPath(pg, ge.pos, end, path)
-			if len(newPath) > 0 {
-				if len(shortest) == 0 || (len(newPath) < len(shortest)) {
-					shortest = newPath
-				}
+func findShortestPath(pg map[position][]graphEntry, start position, end position) []position {
+	path := make([]position, 0)
+	exploredNodes := make(map[position]position, 0)
+	queue := make([]position, 0)
+	exploredNodes[start] = position{}
+	queue = append(queue, start)
+	success := false
+	for len(queue) > 0 {
+		current := queuePop(&queue)
+		if current.x == end.x && current.y == end.y {
+			success = true
+			break
+		}
+		for _, next_step := range pg[current] {
+			_, exists := exploredNodes[next_step.pos]
+			if !exists {
+				queue = append(queue, next_step.pos)
+				exploredNodes[next_step.pos] = current
 			}
 		}
+
 	}
-	return shortest
+	if success {
+		current := end
+		for current.x != start.x || current.y != start.y {
+			path = append(path, current)
+			current = exploredNodes[current]
+			//printGrid(hm, path)
+		}
+	}
+	return path
 }
+
+// func printGrid(hm heightMap, path []position) [][]string {
+// 	cmd := exec.Command("clear")
+// 	cmd.Stdout = os.Stdout
+// 	cmd.Run()
+// 	g := make([][]string, 0)
+// 	for y := 0; y < len(hm.grid); y++ {
+// 		g = append(g, make([]string, 0))
+// 		for x := 0; x < len(hm.grid[0]); x++ {
+// 			g[y] = append(g[y], fmt.Sprintf("%02d", hm.grid[y][x]))
+// 		}
+// 	}
+// 	g[hm.start.y][hm.start.x] = "S "
+// 	g[hm.end.y][hm.end.x] = " E"
+
+// 	for _, pos := range path {
+// 		g[pos.y][pos.x] = "\033[32m##\033[0m"
+// 	}
+
+// 	for y := 0; y < len(hm.grid); y++ {
+// 		fmt.Println(g[y])
+// 	}
+// 	time.Sleep(100 * time.Millisecond)
+// 	return g
+// }
 
 func processFile(filename string) {
 	raw_data := loadFile(filename)
-	height_map := parseRawData(raw_data)
-	//fmt.Println(height_map)
-	pathGraph := buildGraph(height_map)
-	//fmt.Println(pathGraph)
-	path := make([]position, 0)
-	shortestPath := findShortestPath(pathGraph, height_map.start, height_map.end, path)
-	fmt.Println(shortestPath)
-	fmt.Println("The minimum path length is: ", len(shortestPath)-1)
+	hm := parseRawData(raw_data)
+	pathGraph := buildGraph(hm)
+	shortestPath := findShortestPath(pathGraph, hm.start, hm.end)
+	fmt.Println("Pt1 - The minimum path length is: ", len(shortestPath))
+	base_elevation_list := make([]position, 0)
+	pt2_path_list := make([][]position, 0)
+	for y := 0; y < len(hm.grid); y++ {
+		for x := 0; x < len(hm.grid[0]); x++ {
+			if hm.grid[y][x] == 1 {
+				base_elevation_list = append(base_elevation_list, position{x: x, y: y})
+			}
+		}
+	}
+	fmt.Println("Number of paths to check: ", len(base_elevation_list))
+	for _, s := range base_elevation_list {
+		pt2_path_list = append(pt2_path_list, findShortestPath(pathGraph, s, hm.end))
+	}
+	min_path_length := 50000
+	for _, p := range pt2_path_list {
+		if len(p) != 0 && len(p) < min_path_length {
+			min_path_length = len(p)
+		}
+	}
+	fmt.Println("Pt2 - The minimum path length is: ", min_path_length)
 }
 
 func main() {
 	processFile("day12-example.txt")
-	fmt.Println("-------")
 	processFile("day12.txt")
 }
