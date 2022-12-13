@@ -4,11 +4,17 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"sort"
 )
 
 type position struct {
 	x int
 	y int
+}
+
+type graphEntry struct {
+	pos    position
+	weight int
 }
 
 type heightMap struct {
@@ -83,22 +89,88 @@ func parseRawData(input []string) heightMap {
 	return result
 }
 
+func buildGraphEntryList(hm heightMap, x int, y int) []graphEntry {
+	result := make([]graphEntry, 0)
+	if x-1 >= 0 && hm.grid[y][x-1] <= hm.grid[y][x]+1 {
+		result = append(result, graphEntry{pos: position{x: x - 1, y: y}, weight: hm.grid[y][x] + 1 - hm.grid[y][x-1]})
+	}
+	if x+1 < len(hm.grid[0]) && hm.grid[y][x+1] <= hm.grid[y][x]+1 {
+		result = append(result, graphEntry{pos: position{x: x + 1, y: y}, weight: hm.grid[y][x] + 1 - hm.grid[y][x+1]})
+	}
+	if y-1 >= 0 && hm.grid[y-1][x] <= hm.grid[y][x]+1 {
+		result = append(result, graphEntry{pos: position{x: x, y: y - 1}, weight: hm.grid[y][x] + 1 - hm.grid[y-1][x]})
+	}
+	if y+1 < len(hm.grid) && hm.grid[y+1][x] <= hm.grid[y][x]+1 {
+		result = append(result, graphEntry{pos: position{x: x, y: y + 1}, weight: hm.grid[y][x] + 1 - hm.grid[y+1][x]})
+	}
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].weight < result[j].weight
+	})
+	return result
+}
+
+func buildGraph(hm heightMap) map[position][]graphEntry {
+	result := make(map[position][]graphEntry)
+	for y := 0; y < len(hm.grid); y++ {
+		for x := 0; x < len(hm.grid[0]); x++ {
+			k := position{x: x, y: y}
+			v := buildGraphEntryList(hm, x, y)
+			result[k] = v
+		}
+	}
+	return result
+}
+
+func pathContainsPosition(path []position, pos position) bool {
+	result := false
+	for _, p := range path {
+		if p.x == pos.x && p.y == pos.y {
+			result = true
+			break
+		}
+	}
+	return result
+}
+
+func findShortestPath(pg map[position][]graphEntry, start position, end position, path []position) []position {
+	_, exists := pg[start]
+	if !exists {
+		return path
+	}
+	path = append(path, start)
+	//fmt.Println(path)
+	//fmt.Printf("Start x: %d Start y %d - End x: %d End y: %d\n", start.x, start.y, end.x, end.y)
+	if start.x == end.x && start.y == end.y {
+		return path
+	}
+	shortest := make([]position, 0)
+	for _, ge := range pg[start] {
+		if !pathContainsPosition(path, ge.pos) {
+			newPath := findShortestPath(pg, ge.pos, end, path)
+			if len(newPath) > 0 {
+				if len(shortest) == 0 || (len(newPath) < len(shortest)) {
+					shortest = newPath
+				}
+			}
+		}
+	}
+	return shortest
+}
+
 func processFile(filename string) {
 	raw_data := loadFile(filename)
 	height_map := parseRawData(raw_data)
-	fmt.Println(height_map)
-	// paths := find_paths(height_map)
-	// min_path := len(height_map.grid) * len(height_map.grid[0])
-	// for _, path := range paths {
-	// 	if len(path) < min_path {
-	// 		min_path = len(path)
-	// 	}
-	// }
-	// fmt.Println("The minimum path length is: ", min_path)
+	//fmt.Println(height_map)
+	pathGraph := buildGraph(height_map)
+	//fmt.Println(pathGraph)
+	path := make([]position, 0)
+	shortestPath := findShortestPath(pathGraph, height_map.start, height_map.end, path)
+	fmt.Println(shortestPath)
+	fmt.Println("The minimum path length is: ", len(shortestPath)-1)
 }
 
 func main() {
 	processFile("day12-example.txt")
 	fmt.Println("-------")
-	//processFile("day12.txt")
+	processFile("day12.txt")
 }
