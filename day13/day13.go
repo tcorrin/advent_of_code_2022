@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"sort"
 )
 
 type packetPair struct {
@@ -56,32 +57,16 @@ func parsePacket(input string) []any {
 	return arr
 }
 
-func compareList(lhs, rhs []any, pp_index int) *bool {
+func comparePackets(lhs, rhs []any, pp_index int) *bool {
 	var result *bool = nil
 
-	if pp_index+1 == 50 {
-		fmt.Println("~~TROUBLESOME NUMBER 50~~")
-		fmt.Println("LHS")
-		fmt.Println(lhs[0])
-		fmt.Println("RHS")
-		fmt.Println(rhs[0])
-	}
-
 	if len(lhs) == 0 && len(rhs) > 0 {
-		fmt.Println("~~EVIL NUMBER SIX~~")
-		fmt.Println("LHS ran out of items - PASS - index ", pp_index+1)
 		return newTrue()
 	}
 
 	for i, v := range lhs {
-		fmt.Printf("i: %d LHS len: %d RHS len: %d\n", i, len(lhs), len(rhs))
 		if i > len(rhs)-1 {
-			fmt.Println("RHS ran out of items - FAIL - index ", pp_index+1)
 			result = newFalse()
-			break
-		} else if i+1 == len(lhs)-1 && i+1 < len(rhs)-1 {
-			fmt.Println("LHS ran out of items - PASS - index ", pp_index+1)
-			result = newTrue()
 			break
 		} else {
 			lhs_type := fmt.Sprintf("%T", v)
@@ -90,39 +75,37 @@ func compareList(lhs, rhs []any, pp_index int) *bool {
 				lhs := v.(float64)
 				rhs := rhs[i].(float64)
 				if lhs < rhs {
-					fmt.Println("LHS smaller - PASS - index ", pp_index+1)
 					result = newTrue()
 					break
 				} else if lhs > rhs {
-					fmt.Println("RHS smaller - FAIL - index ", pp_index+1)
 					result = newFalse()
 					break
 				}
 			} else if lhs_type == "[]interface {}" && rhs_type == "[]interface {}" {
-				result = compareList(v.([]any), rhs[i].([]any), pp_index)
+				result = comparePackets(v.([]any), rhs[i].([]any), pp_index)
 				if result != nil {
 					break
 				}
 			} else if lhs_type == "float64" && rhs_type == "[]interface {}" {
 				convert := make([]any, 0)
 				convert = append(convert, v)
-				result = compareList(convert, rhs[i].([]any), pp_index)
+				result = comparePackets(convert, rhs[i].([]any), pp_index)
 				if result != nil {
 					break
 				}
 			} else if lhs_type == "[]interface {}" && rhs_type == "float64" {
 				convert := make([]any, 0)
 				convert = append(convert, rhs[i])
-				result = compareList(v.([]any), convert, pp_index)
+				result = comparePackets(v.([]any), convert, pp_index)
 				if result != nil {
 					break
 				}
 			}
 		}
-		if pp_index+1 == 50 {
-			fmt.Println("EXIT")
-			fmt.Println(lhs)
-			fmt.Println(rhs)
+
+		if i+1 == len(lhs) && i+1 < len(rhs) {
+			result = newTrue()
+			break
 		}
 	}
 	return result
@@ -131,29 +114,21 @@ func compareList(lhs, rhs []any, pp_index int) *bool {
 func parsePacketPair(pp packetPair, pp_index int) *bool {
 	lhs := parsePacket(pp.lhs)
 	rhs := parsePacket(pp.rhs)
-	return compareList(lhs, rhs, pp_index)
+	return comparePackets(lhs, rhs, pp_index)
 }
 
 func parsePacketPairs(pp_list []packetPair) []*bool {
 	result := make([]*bool, 0)
 	for i, pp := range pp_list {
 		result = append(result, parsePacketPair(pp, i))
-		fmt.Println("-------")
+		//fmt.Println("-------")
 	}
 	return result
 }
 
 func processFile(filename string) {
 	pp_list := loadFile(filename)
-	//fmt.Println(pp_list)
 	correct_order_list := parsePacketPairs(pp_list)
-	for i, c := range correct_order_list {
-		if c != nil {
-			fmt.Printf("%d - %t\n", i+1, *c)
-		} else {
-			fmt.Printf("%d - nil\n", i+1)
-		}
-	}
 	indices_total := 0
 	for i, correct_order_check := range correct_order_list {
 		if correct_order_check != nil && *correct_order_check {
@@ -161,9 +136,32 @@ func processFile(filename string) {
 		}
 	}
 	fmt.Println("Sum of correct order indices: ", indices_total)
+
+	pp_list = append(pp_list, packetPair{lhs: "[[2]]", rhs: "[[6]]"})
+	packet_list := make([][]any, 0)
+	for _, pp := range pp_list {
+		packet_list = append(packet_list, parsePacket(pp.lhs))
+		packet_list = append(packet_list, parsePacket(pp.rhs))
+	}
+
+	sort.Slice(packet_list, func(i, j int) bool {
+		return *comparePackets(packet_list[i], packet_list[j], 0)
+	})
+
+	result := 1
+
+	for i, p := range packet_list {
+		//fmt.Printf("%02d - %v\n", i+1, p)
+		p_string := fmt.Sprintf("%v", p)
+		if p_string == "[[6]]" || p_string == "[[2]]" {
+			result *= i + 1
+		}
+	}
+
+	fmt.Println("Distress signal decoder key: ", result)
 }
 
 func main() {
-	//processFile("day13-example.txt")
+	processFile("day13-example.txt")
 	processFile("day13.txt")
 }
