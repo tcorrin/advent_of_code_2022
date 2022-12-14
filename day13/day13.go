@@ -59,6 +59,14 @@ func parsePacket(input string) []any {
 func compareList(lhs, rhs []any, pp_index int) *bool {
 	var result *bool = nil
 
+	if pp_index+1 == 50 {
+		fmt.Println("~~TROUBLESOME NUMBER 50~~")
+		fmt.Println("LHS")
+		fmt.Println(lhs[0])
+		fmt.Println("RHS")
+		fmt.Println(rhs[0])
+	}
+
 	if len(lhs) == 0 && len(rhs) > 0 {
 		fmt.Println("~~EVIL NUMBER SIX~~")
 		fmt.Println("LHS ran out of items - PASS - index ", pp_index+1)
@@ -66,7 +74,7 @@ func compareList(lhs, rhs []any, pp_index int) *bool {
 	}
 
 	for i, v := range lhs {
-		//fmt.Printf("i: %d LHS len: %d RHS len: %d\n", i, len(lhs), len(rhs))
+		fmt.Printf("i: %d LHS len: %d RHS len: %d\n", i, len(lhs), len(rhs))
 		if i > len(rhs)-1 {
 			fmt.Println("RHS ran out of items - FAIL - index ", pp_index+1)
 			result = newFalse()
@@ -110,6 +118,11 @@ func compareList(lhs, rhs []any, pp_index int) *bool {
 					break
 				}
 			}
+		}
+		if pp_index+1 == 50 {
+			fmt.Println("EXIT")
+			fmt.Println(lhs)
+			fmt.Println(rhs)
 		}
 	}
 	return result
